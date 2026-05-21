@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stephen's Tapestry Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   RESET & BASE
+   ===================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --off-white: #f5f3ef;
+  --warm-white: #faf8f4;
+  --ink: #1a1916;
+  --ink-mid: #3a3835;
+  --ink-light: #7a7672;
+  --ink-faint: #c4c0b8;
+  --accent: #8b7355;
+  --accent-light: #c4a882;
+  --border: rgba(26,25,22,0.12);
+  --border-light: rgba(26,25,22,0.06);
+  
+  --serif: 'Cormorant Garamond', 'Georgia', serif;
+  --sans: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+  
+  --ease-gallery: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--sans);
+  background-color: var(--warm-white);
+  color: var(--ink);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =====================================================
+   NOISE TEXTURE OVERLAY
+   ===================================================== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* =====================================================
+   PASSWORD GATE
+   ===================================================== */
+#password-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: #0f0e0c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity 1.2s var(--ease-gallery);
+}
+
+#password-gate.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gate-texture {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(139,115,85,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 30%, rgba(196,168,130,0.04) 0%, transparent 70%),
+    linear-gradient(180deg, #0f0e0c 0%, #141210 50%, #0f0e0c 100%);
+  pointer-events: none;
+}
+
+.gate-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.gate-line-top,
+.gate-line-bottom {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196,168,130,0.2), transparent);
+}
+.gate-line-top { top: 60px; }
+.gate-line-bottom { bottom: 60px; }
+
+.gate-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 480px;
+  width: 90%;
+  animation: gateReveal 1.4s var(--ease-gallery) both;
+}
+
+@keyframes gateReveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gate-eyebrow {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(196,168,130,0.5);
+  margin-bottom: 2.5rem;
+}
+
+.gate-studio-name {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2rem, 5vw, 3rem);
+  color: rgba(245,243,239,0.9);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+
+.gate-studio-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: rgba(196,168,130,0.5);
+  letter-spacing: 0.08em;
+  margin-bottom: 3.5rem;
+}
+
+.gate-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(196,168,130,0.3);
+  margin: 0 auto 3rem;
+}
+
+.gate-message {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  color: rgba(245,243,239,0.6);
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+  margin-bottom: 3rem;
+}
+
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gate-input-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+}
+
+.gate-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(196,168,130,0.25);
+  padding: 0.8rem 0;
+  text-align: center;
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 1.1rem;
+  letter-spacing: 0.35em;
+  color: rgba(245,243,239,0.85);
+  outline: none;
+  transition: border-color 0.4s;
+  -webkit-text-security: disc;
+  caret-color: rgba(196,168,130,0.7);
+}
+
+.gate-input:focus {
+  border-bottom-color: rgba(196,168,130,0.6);
+}
+
+.gate-input::placeholder {
+  color: rgba(196,168,130,0.25);
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+}
+
+.gate-input-line {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 1px;
+  background: rgba(196,168,130,0.6);
+  transition: width 0.4s var(--ease-gallery);
+}
+.gate-input:focus ~ .gate-input-line {
+  width: 100%;
+}
+
+.gate-btn {
+  background: transparent;
+  border: 1px solid rgba(196,168,130,0.25);
+  color: rgba(245,243,239,0.6);
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 0.85rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.4s var(--ease-gallery);
+  margin-top: 0.5rem;
+}
+
+.gate-btn:hover {
+  border-color: rgba(196,168,130,0.6);
+  color: rgba(245,243,239,0.9);
+  background: rgba(196,168,130,0.05);
+}
+
+.gate-error {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: rgba(196,100,80,0.7);
+  height: 1.2em;
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.gate-error.visible { opacity: 1; }
+
+.gate-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  opacity: 0.2;
+}
+.gate-corner-tl { top: 60px; left: 60px; border-top: 1px solid rgba(196,168,130,0.6); border-left: 1px solid rgba(196,168,130,0.6); }
+.gate-corner-tr { top: 60px; right: 60px; border-top: 1px solid rgba(196,168,130,0.6); border-right: 1px solid rgba(196,168,130,0.6); }
+.gate-corner-bl { bottom: 60px; left: 60px; border-bottom: 1px solid rgba(196,168,130,0.6); border-left: 1px solid rgba(196,168,130,0.6); }
+.gate-corner-br { bottom: 60px; right: 60px; border-bottom: 1px solid rgba(196,168,130,0.6); border-right: 1px solid rgba(196,168,130,0.6); }
+
+/* =====================================================
+   MAIN SITE (hidden until password entered)
+   ===================================================== */
+#main-site {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s var(--ease-gallery) 0.3s;
+}
+
+#main-site.revealed {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* =====================================================
+   NAVIGATION
+   ===================================================== */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 800;
+  padding: 0 3rem;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  mix-blend-mode: normal;
+  transition: background 0.6s, border-color 0.6s;
+}
+
+nav.scrolled {
+  background: rgba(250,248,244,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.nav-logo {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.nav-logo span {
+  display: block;
+  font-style: italic;
+  font-size: 0.7rem;
+  font-family: var(--sans);
+  font-weight: 200;
+  letter-spacing: 0.18em;
+  color: var(--ink-light);
+  margin-top: 0.1rem;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width 0.35s var(--ease-gallery);
+}
+
+.nav-links a:hover { color: var(--ink); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px;
+  background: none;
+  border: none;
+}
+
+.nav-hamburger span {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: var(--ink);
+  transition: all 0.3s;
+}
+
+/* =====================================================
+   MOBILE NAV DRAWER
+   ===================================================== */
+.nav-drawer {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100vh;
+  background: var(--ink);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 3rem;
+  transition: right 0.5s var(--ease-gallery);
+}
+
+.nav-drawer.open { right: 0; }
+
+.nav-drawer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.nav-drawer-links a {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.6rem;
+  color: rgba(245,243,239,0.85);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.nav-drawer-links a:hover { color: var(--accent-light); }
+
+.nav-drawer-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: rgba(245,243,239,0.5);
+  font-size: 1.5rem;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-weight: 200;
+  padding: 0.5rem;
+  transition: color 0.3s;
+}
+
+.nav-drawer-close:hover { color: rgba(245,243,239,0.9); }
+
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 890;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+
+.nav-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* =====================================================
+   HERO SECTION
+   ===================================================== */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 3rem 5rem;
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 100% 80% at 65% 40%, rgba(139,115,85,0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #1a1916 0%, #0f0e0c 100%);
+}
+
+.hero-bg-pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: 
+    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(196,168,130,1) 80px, rgba(196,168,130,1) 81px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(196,168,130,1) 80px, rgba(196,168,130,1) 81px);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+}
+
+.hero-eyebrow {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  opacity: 0.7;
+  margin-bottom: 2rem;
+  animation: fadeUp 1s var(--ease-gallery) 0.4s both;
+}
+
+.hero-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(3.5rem, 9vw, 8rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: rgba(245,243,239,0.95);
+  margin-bottom: 2.5rem;
+  animation: fadeUp 1s var(--ease-gallery) 0.55s both;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: rgba(196,168,130,0.8);
+}
+
+.hero-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  color: rgba(245,243,239,0.45);
+  max-width: 500px;
+  line-height: 1.8;
+  animation: fadeUp 1s var(--ease-gallery) 0.7s both;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 3rem;
+  right: 3rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  animation: fadeIn 1.2s var(--ease-gallery) 1.2s both;
+}
+
+.hero-scroll-text {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245,243,239,0.3);
+  writing-mode: vertical-rl;
+}
+
+.hero-scroll-line {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(196,168,130,0.4), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+
+@keyframes scrollLine {
+  0%, 100% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+}
+
+/* =====================================================
+   UTILITIES & ANIMATIONS
+   ===================================================== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s var(--ease-gallery), transform 0.9s var(--ease-gallery);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* =====================================================
+   SECTION BASICS
+   ===================================================== */
+section {
+  padding: 7rem 3rem;
+}
+
+.section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-eyebrow {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.2rem;
+}
+
+.section-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 3rem;
+}
+
+.section-title em {
+  font-style: italic;
+  color: var(--ink-mid);
+}
+
+/* =====================================================
+   INTRO / ABOUT STRIP
+   ===================================================== */
+#intro {
+  background: var(--off-white);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  padding: 6rem 3rem;
+}
+
+.intro-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8rem;
+  align-items: center;
+}
+
+.intro-text h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  line-height: 1.25;
+  color: var(--ink);
+  margin-bottom: 2rem;
+}
+
+.intro-text h2 em {
+  font-style: italic;
+  color: var(--ink-mid);
+}
+
+.intro-body {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--ink-mid);
+}
+
+.intro-body p + p {
+  margin-top: 1.2rem;
+}
+
+.intro-detail {
+  border-left: 1px solid var(--border);
+  padding-left: 3rem;
+}
+
+.intro-detail-label {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+
+.intro-detail-value {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--ink-mid);
+  margin-bottom: 2.5rem;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   WHAT IS TAPESTRY
+   ===================================================== */
+#what-is {
+  background: var(--warm-white);
+}
+
+.what-is-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 6rem;
+  align-items: start;
+}
+
+.what-is-sticky {
+  position: sticky;
+  top: 100px;
+}
+
+.what-is-body {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.9;
+  color: var(--ink-mid);
+}
+
+.what-is-body p + p {
+  margin-top: 1.5rem;
+}
+
+.pull-quote {
+  margin: 3rem 0;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* =====================================================
+   TAPESTRIES (ARTWORKS)
+   ===================================================== */
+#tapestries {
+  background: var(--off-white);
+  padding: 7rem 0;
+}
+
+.tapestries-header {
+  padding: 0 3rem;
+  max-width: 1200px;
+  margin: 0 auto 5rem;
+}
+
+.tapestries-intro {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--ink-mid);
+  max-width: 620px;
+  margin-top: 1rem;
+}
+
+/* Full-width artwork grid */
+.artwork-grid-full {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+}
+
+.artwork-item {
+  position: relative;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--warm-white);
+}
+
+.artwork-item:nth-child(3n) { border-right: none; }
+
+.artwork-img-wrap {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+  background: #e8e4de;
+}
+
+.artwork-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  flex-direction: column;
+  gap: 1rem;
+  background: linear-gradient(135deg, #ede9e3 0%, #e0dcd6 100%);
+  transition: transform 0.8s var(--ease-gallery);
+}
+
+.artwork-img-placeholder svg {
+  opacity: 0.2;
+  width: 48px;
+  height: 48px;
+}
+
+.artwork-item:hover .artwork-img-placeholder {
+  transform: scale(1.03);
+}
+
+.artwork-info {
+  padding: 1.8rem 2rem 2.2rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.artwork-number {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.artwork-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+
+.artwork-meta {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.72rem;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+}
+
+/* Featured large artwork */
+.artwork-featured {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 5rem 0;
+}
+
+.artwork-featured-img {
+  aspect-ratio: 4/5;
+  background: linear-gradient(135deg, #e5e0d9 0%, #d8d2c9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.artwork-featured-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(26,25,22,0.05));
+}
+
+.artwork-featured-detail {
+  padding: 5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 1px solid var(--border);
+}
+
+.artwork-featured-detail .artwork-number {
+  font-size: 0.62rem;
+}
+
+.artwork-featured-detail .artwork-title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.artwork-featured-detail .artwork-desc {
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--ink-mid);
+  margin-top: 1.5rem;
+}
+
+.artwork-specs {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border-light);
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.75rem;
+}
+
+.spec-row:last-child { border-bottom: none; }
+
+.spec-label {
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+}
+
+.spec-value {
+  color: var(--ink-mid);
+}
+
+/* =====================================================
+   TAPESTRY DESCRIPTIONS SECTION
+   ===================================================== */
+#collection {
+  background: var(--warm-white);
+  padding: 7rem 3rem;
+}
+
+.collection-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem 6rem;
+  margin-top: 5rem;
+}
+
+.collection-piece {
+  position: relative;
+}
+
+.collection-piece-number {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.8rem;
+}
+
+.collection-piece-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+  color: var(--ink);
+  margin-bottom: 1.2rem;
+  line-height: 1.25;
+}
+
+.collection-piece-body {
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--ink-mid);
+}
+
+.collection-piece-body p + p {
+  margin-top: 1rem;
+}
+
+.collection-piece-meta {
+  margin-top: 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border-light);
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.72rem;
+  color: var(--ink-light);
+}
+
+/* =====================================================
+   PROCESS SECTION
+   ===================================================== */
+#process {
+  background: var(--ink);
+  color: var(--off-white);
+  padding: 8rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+#process::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 30% 60%, rgba(139,115,85,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.process-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.process-inner .section-eyebrow {
+  color: var(--accent-light);
+  opacity: 0.6;
+}
+
+.process-inner .section-title {
+  color: rgba(245,243,239,0.9);
+  margin-bottom: 5rem;
+}
+
+.process-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3rem;
+}
+
+.process-step {
+  position: relative;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(196,168,130,0.2);
+}
+
+.process-step-num {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 3.5rem;
+  color: rgba(196,168,130,0.12);
+  line-height: 1;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.process-step-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.1rem;
+  color: rgba(245,243,239,0.85);
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.process-step-body {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.82rem;
+  line-height: 1.85;
+  color: rgba(245,243,239,0.45);
+}
+
+/* =====================================================
+   ABOUT STEPHEN
+   ===================================================== */
+#about {
+  background: var(--off-white);
+  padding: 8rem 3rem;
+}
+
+.about-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 8rem;
+  align-items: start;
+}
+
+.about-left .section-eyebrow { margin-bottom: 1.2rem; }
+.about-left .section-title { margin-bottom: 0; }
+
+.about-portrait {
+  margin-top: 4rem;
+  aspect-ratio: 3/4;
+  background: linear-gradient(135deg, #ddd9d2 0%, #cec9c1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-portrait::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+}
+
+.about-right { padding-top: 2rem; }
+
+.about-bio {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: var(--ink-mid);
+}
+
+.about-bio p + p {
+  margin-top: 1.5rem;
+}
+
+.about-statement {
+  margin-top: 3rem;
+  padding: 2.5rem;
+  border: 1px solid var(--border);
+  background: var(--warm-white);
+}
+
+.about-statement-label {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.2rem;
+}
+
+.about-statement-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+/* =====================================================
+   COMMISSIONS
+   ===================================================== */
+#commissions {
+  background: var(--warm-white);
+  padding: 8rem 3rem;
+}
+
+.commissions-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.commissions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  margin-top: 5rem;
+}
+
+.commission-block h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.4rem;
+  color: var(--ink);
+  margin-bottom: 1.2rem;
+  line-height: 1.3;
+}
+
+.commission-block p {
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--ink-mid);
+}
+
+.commission-block p + p {
+  margin-top: 1rem;
+}
+
+.commission-cta {
+  margin-top: 2rem;
+  display: inline-block;
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ink);
+  transition: all 0.35s;
+}
+
+.commission-cta:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* =====================================================
+   EXHIBITIONS / SHOWS
+   ===================================================== */
+#exhibitions {
+  background: var(--off-white);
+  padding: 8rem 3rem;
+}
+
+.exhibitions-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.exhibition-list {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.exhibition-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 3rem;
+  padding: 2.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+  align-items: start;
+  transition: background 0.3s;
+}
+
+.exhibition-item:hover {
+  background: rgba(139,115,85,0.02);
+}
+
+.exhibition-year {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.8rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  line-height: 1;
+}
+
+.exhibition-detail h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 0.3rem;
+}
+
+.exhibition-detail p {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.78rem;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+}
+
+/* =====================================================
+   CONTACT
+   ===================================================== */
+#contact {
+  background: var(--ink);
+  padding: 8rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+#contact::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 80% 50%, rgba(139,115,85,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.contact-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8rem;
+  align-items: start;
+}
+
+.contact-left .section-eyebrow {
+  color: rgba(196,168,130,0.5);
+}
+
+.contact-left .section-title {
+  color: rgba(245,243,239,0.9);
+  margin-bottom: 2rem;
+}
+
+.contact-intro {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: rgba(245,243,239,0.45);
+}
+
+.contact-details {
+  margin-top: 3rem;
+}
+
+.contact-detail-item {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid rgba(245,243,239,0.06);
+}
+
+.contact-detail-item:first-child {
+  border-top: 1px solid rgba(245,243,239,0.06);
+}
+
+.contact-detail-label {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(196,168,130,0.4);
+  margin-bottom: 0.4rem;
+}
+
+.contact-detail-value {
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: rgba(245,243,239,0.7);
+  line-height: 1.5;
+}
+
+.contact-detail-value a {
+  color: rgba(245,243,239,0.7);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-detail-value a:hover {
+  color: var(--accent-light);
+}
+
+.contact-right {
+  padding-top: 4rem;
+}
+
+.contact-form-group {
+  margin-bottom: 2rem;
+}
+
+.contact-form-label {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(196,168,130,0.4);
+  margin-bottom: 0.8rem;
+}
+
+.contact-form-input,
+.contact-form-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(245,243,239,0.1);
+  padding: 0.8rem 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: rgba(245,243,239,0.7);
+  outline: none;
+  transition: border-color 0.3s;
+  caret-color: var(--accent-light);
+}
+
+.contact-form-input:focus,
+.contact-form-textarea:focus {
+  border-bottom-color: rgba(196,168,130,0.4);
+}
+
+.contact-form-textarea {
+  resize: none;
+  height: 120px;
+  line-height: 1.6;
+}
+
+.contact-submit {
+  margin-top: 1rem;
+  background: transparent;
+  border: 1px solid rgba(196,168,130,0.25);
+  color: rgba(245,243,239,0.6);
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 1rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.4s var(--ease-gallery);
+}
+
+.contact-submit:hover {
+  border-color: rgba(196,168,130,0.6);
+  color: rgba(245,243,239,0.9);
+  background: rgba(196,168,130,0.05);
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+footer {
+  background: #0a0908;
+  padding: 3rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-logo {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 0.9rem;
+  color: rgba(245,243,239,0.35);
+}
+
+.footer-copy {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: rgba(245,243,239,0.2);
+}
+
+.footer-nav {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.footer-nav a {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(245,243,239,0.25);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-nav a:hover { color: rgba(245,243,239,0.6); }
+
+/* =====================================================
+   ARTWORK LIGHTBOX / MODAL
+   ===================================================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  background: rgba(15,14,12,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--ease-gallery);
+  backdrop-filter: blur(8px);
+}
+
+.lightbox.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.lightbox-content {
+  max-width: 1000px;
+  width: 90%;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 4rem;
+  align-items: center;
+  transform: translateY(20px);
+  transition: transform 0.6s var(--ease-gallery);
+}
+
+.lightbox.open .lightbox-content {
+  transform: translateY(0);
+}
+
+.lightbox-img {
+  aspect-ratio: 3/4;
+  background: linear-gradient(135deg, #2a2823 0%, #1e1c19 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(196,168,130,0.2);
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.lightbox-info {
+  color: rgba(245,243,239,0.8);
+}
+
+.lightbox-info .artwork-number {
+  color: rgba(196,168,130,0.4);
+  margin-bottom: 1rem;
+}
+
+.lightbox-info .artwork-title {
+  color: rgba(245,243,239,0.9);
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.lightbox-info .artwork-desc {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: rgba(245,243,239,0.45);
+  margin-top: 1.5rem;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: none;
+  border: none;
+  color: rgba(245,243,239,0.4);
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.lightbox-close:hover { color: rgba(245,243,239,0.9); }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 1024px) {
+  section { padding: 5rem 2rem; }
+  nav { padding: 0 2rem; }
+  #hero { padding: 0 2rem 4rem; }
+  
+  .intro-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .what-is-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .what-is-sticky { position: static; }
+  .artwork-grid-full { grid-template-columns: repeat(2, 1fr); }
+  .artwork-item:nth-child(3n) { border-right: 1px solid var(--border); }
+  .artwork-item:nth-child(2n) { border-right: none; }
+  .artwork-featured { grid-template-columns: 1fr; }
+  .artwork-featured-detail { border-left: none; border-top: 1px solid var(--border); }
+  .process-steps { grid-template-columns: repeat(2, 1fr); }
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .about-portrait { aspect-ratio: 2/1; }
+  .commissions-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .contact-inner { grid-template-columns: 1fr; gap: 4rem; }
+  .collection-grid { grid-template-columns: 1fr; gap: 3.5rem; }
+  .footer-inner { flex-direction: column; gap: 1.5rem; text-align: center; }
+  .footer-nav { justify-content: center; }
+  .lightbox-content { grid-template-columns: 1fr; max-width: 480px; }
+  .lightbox-img { aspect-ratio: 4/3; }
+  
+  .gate-corner-tl, .gate-corner-tr, .gate-corner-bl, .gate-corner-br { display: none; }
+  .gate-line-top, .gate-line-bottom { display: none; }
+}
+
+@media (max-width: 640px) {
+  section { padding: 4rem 1.5rem; }
+  nav { padding: 0 1.5rem; }
+  #hero { padding: 0 1.5rem 3.5rem; }
+  
+  .nav-links { display: none; }
+  .nav-hamburger { display: flex; }
+  
+  .artwork-grid-full { grid-template-columns: 1fr; }
+  .artwork-item:nth-child(2n) { border-right: 1px solid var(--border); }
+  .artwork-item { border-right: none !important; }
+  .process-steps { grid-template-columns: 1fr; }
+  
+  .exhibition-item { grid-template-columns: 80px 1fr; gap: 1.5rem; }
+  
+  .footer-nav { flex-wrap: wrap; gap: 1rem; }
+  
+  .hero-scroll { display: none; }
+  
+  .intro-detail { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 2rem; }
+}
+
+/* =====================================================
+   HORIZONTAL DIVIDER
+   ===================================================== */
+.h-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* =====================================================
+   MARQUEE STRIP
+   ===================================================== */
+.marquee-strip {
+  background: var(--ink);
+  padding: 1.2rem 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.marquee-item {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(196,168,130,0.35);
+  padding: 0 3rem;
+  white-space: nowrap;
+}
+
+.marquee-dot {
+  color: rgba(196,168,130,0.2);
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* =====================================================
+   TAPESTRY TECHNIQUES LIST
+   ===================================================== */
+.techniques-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  margin-top: 4rem;
+}
+
+.technique-item {
+  padding: 2.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.technique-item:nth-child(3n) { border-right: none; }
+.technique-item:nth-last-child(-n+3) { border-bottom: none; }
+
+.technique-icon {
+  width: 36px;
+  height: 1px;
+  background: var(--accent-light);
+  opacity: 0.4;
+  margin-bottom: 1.5rem;
+}
+
+.technique-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin-bottom: 0.8rem;
+}
+
+.technique-desc {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: var(--ink-light);
+}
+
+@media (max-width: 768px) {
+  .techniques-grid { grid-template-columns: 1fr 1fr; }
+  .technique-item:nth-child(3n) { border-right: 1px solid var(--border); }
+  .technique-item:nth-child(2n) { border-right: none; }
+  .technique-item:nth-last-child(-n+3) { border-bottom: 1px solid var(--border); }
+  .technique-item:nth-last-child(-n+2) { border-bottom: none; }
+}
+
+@media (max-width: 480px) {
+  .techniques-grid { grid-template-columns: 1fr; }
+  .technique-item { border-right: none !important; }
+  .technique-item:last-child { border-bottom: none; }
+  .technique-item:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== PASSWORD GATE ==================== -->
+<div id="password-gate">
+  <div class="gate-texture"></div>
+  <div class="gate-grain"></div>
+  <div class="gate-line-top"></div>
+  <div class="gate-line-bottom"></div>
+  <div class="gate-corner gate-corner-tl"></div>
+  <div class="gate-corner gate-corner-tr"></div>
+  <div class="gate-corner gate-corner-bl"></div>
+  <div class="gate-corner gate-corner-br"></div>
+  
+  <div class="gate-content">
+    <div class="gate-eyebrow">Private Preview</div>
+    <div class="gate-studio-name">Stephen's<br>Tapestry Studio</div>
+    <div class="gate-studio-sub">Woven Works of Art</div>
+    <div class="gate-divider"></div>
+    <div class="gate-message">"Hi Tina, let me know what you think!"</div>
+    <div class="gate-form">
+      <div class="gate-input-wrap">
+        <input 
+          type="password" 
+          class="gate-input" 
+          id="gate-input"
+          placeholder="Enter access code"
+          autocomplete="off"
+        >
+        <div class="gate-input-line"></div>
+      </div>
+      <div class="gate-error" id="gate-error">Incorrect access code</div>
+      <button class="gate-btn" id="gate-btn">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAIN SITE ==================== -->
+<div id="main-site">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#hero" class="nav-logo">
+      Stephen's Tapestry Studio
+      <span>Woven Works of Art</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#what-is">About Tapestry</a></li>
+      <li><a href="#tapestries">Works</a></li>
+      <li><a href="#about">Stephen</a></li>
+      <li><a href="#commissions">Commissions</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile Nav Drawer -->
+  <div class="nav-overlay" id="nav-overlay"></div>
+  <div class="nav-drawer" id="nav-drawer">
+    <button class="nav-drawer-close" id="nav-drawer-close">✕</button>
+    <ul class="nav-drawer-links">
+      <li><a href="#what-is">About Tapestry</a></li>
+      <li><a href="#tapestries">Works</a></li>
+      <li><a href="#about">Stephen</a></li>
+      <li><a href="#commissions">Commissions</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-bg-pattern"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Stephen's Tapestry Studio — Woven Works of Art</div>
+      <h1 class="hero-title">
+        Woven<br>
+        <em>Works</em><br>
+        of Art
+      </h1>
+      <p class="hero-tagline">
+        Hand-woven tapestries crafted with centuries-old technique<br>
+        and a deeply contemporary vision.
+      </p>
+    </div>
+    <div class="hero-scroll">
+      <div class="hero-scroll-line"></div>
+      <div class="hero-scroll-text">Scroll</div>
+    </div>
+  </section>
+
+  <!-- MARQUEE STRIP -->
+  <div class="marquee-strip">
+    <div class="marquee-track" id="marquee-track">
+      <span class="marquee-item">Hand-woven tapestry <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Original artworks <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Commission pieces <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Textile art <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Stephen's Tapestry Studio <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Woven Works of Art <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Hand-woven tapestry <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Original artworks <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Commission pieces <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Textile art <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Stephen's Tapestry Studio <span class="marquee-dot">·</span></span>
+      <span class="marquee-item">Woven Works of Art <span class="marquee-dot">·</span></span>
+    </div>
+  </div>
+
+  <!-- INTRO STRIP -->
+  <section id="intro">
+    <div class="intro-grid">
+      <div class="intro-text reveal">
+        <h2>Tapestry as <em>fine art</em> — woven on a traditional loom</h2>
+        <div class="intro-body">
+          <p>Stephen's Tapestry Studio is dedicated to the creation of high-quality, hand-woven tapestries as original works of art. Each piece is woven on a traditional upright loom, using techniques that have remained essentially unchanged for centuries.</p>
+          <p>The studio produces both original artworks and bespoke commissions, crafting tapestries that exist in the long tradition of woven art — yet are entirely of the present moment.</p>
+        </div>
+      </div>
+      <div class="intro-detail reveal reveal-delay-2">
+        <div class="intro-detail-label">Medium</div>
+        <div class="intro-detail-value">Hand-woven wool and silk tapestry</div>
+        <div class="intro-detail-label">Technique</div>
+        <div class="intro-detail-value">Woven on traditional upright loom</div>
+        <div class="intro-detail-label">Works available</div>
+        <div class="intro-detail-value">Original artworks &amp; bespoke commissions</div>
+        <div class="intro-detail-label">Studio</div>
+        <div class="intro-detail-value">Stephen's Tapestry Studio</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT IS TAPESTRY -->
+  <section id="what-is">
+    <div class="section-inner">
+      <div class="what-is-grid">
+        <div class="what-is-sticky reveal">
+          <div class="section-eyebrow">About the Medium</div>
+          <h2 class="section-title">What is <em>Tapestry?</em></h2>
+        </div>
+        <div class="what-is-body reveal reveal-delay-2">
+          <p>Tapestry is a form of textile art, woven on a loom, and composed of two sets of interlaced threads, those running parallel to the length (called the warp) and those running parallel to the width (called the weft). The warp threads are set up on the loom before weaving begins, and the weft threads are woven back and forth across part or all of the warps to create the design.</p>
+          
+          <div class="pull-quote">
+            "Tapestry is one of the oldest and most distinguished art forms in human history — a tradition spanning millennia, practised across cultures and continents."
+          </div>
+          
+          <p>The structure of a tapestry differs from most woven textiles in that the weft threads do not necessarily run continuously from selvedge to selvedge — instead, the weaver works different coloured threads into specific areas of the warp, building up the image section by section. This is what allows the tapestry weaver to create the complex pictorial designs and tonal gradations characteristic of the medium.</p>
+          
+          <p>Unlike a printed reproduction or a painting, a tapestry has genuine physical texture and depth. Each thread is individually placed by the weaver's hand, and the resulting surface catches the light in a way that is unique to woven fabric. A tapestry changes as you walk past it, as the light shifts throughout the day, and as the seasons change.</p>
+
+          <p>The warp threads in a tapestry are typically hidden in the finished work, covered by the weft. The weft threads carry the colour and pattern, and are beaten down firmly with each row to produce a smooth, even surface. In a high-warp tapestry such as those made at Stephen's Tapestry Studio, the warp runs vertically on the loom, and the weaver works from the back, using a mirror or working from a cartoon placed behind the warp threads to follow the design.</p>
+
+          <p>The technique is slow, demanding, and requires considerable skill and experience. A large tapestry may take months or even years to complete. This investment of time and skill is part of what gives tapestry its weight and presence as an art form — each piece is genuinely unique, the result of thousands of individual decisions made by the weaver in the course of creating the work.</p>
+        </div>
+      </div>
+
+      <!-- Technique cards -->
+      <div class="techniques-grid" style="margin-top: 6rem;">
+        <div class="technique-item reveal">
+          <div class="technique-icon"></div>
+          <div class="technique-title">High-Warp Loom</div>
+          <div class="technique-desc">The warp runs vertically on the loom. The weaver works from the back, using a mirror or cartoon placed behind the warp threads to follow the design.</div>
+        </div>
+        <div class="technique-item reveal reveal-delay-1">
+          <div class="technique-icon"></div>
+          <div class="technique-title">Warp &amp; Weft</div>
+          <div class="technique-desc">Two sets of interlaced threads: the warp (lengthways) and the weft (widthways). The weft carries the colour and pattern, beaten down firmly with each row.</div>
+        </div>
+        <div class="technique-item reveal reveal-delay-2">
+          <div class="technique-icon"></div>
+          <div class="technique-title">Discontinuous Weft</div>
+          <div class="technique-desc">Unlike standard weaving, the weft threads do not run continuously selvedge to selvedge — the weaver builds up the image section by section, colour by colour.</div>
+        </div>
+        <div class="technique-item reveal reveal-delay-1">
+          <div class="technique-icon"></div>
+          <div class="technique-title">Light &amp; Texture</div>
+          <div class="technique-desc">Each thread is individually placed by hand. The resulting surface catches the light uniquely — changing as you move past it, as the light shifts, and as seasons change.</div>
+        </div>
+        <div class="technique-item reveal reveal-delay-2">
+          <div class="technique-icon"></div>
+          <div class="technique-title">Pictorial Design</div>
+          <div class="technique-desc">Complex pictorial images and tonal gradations are made possible by the weaver working different coloured threads into specific areas of the warp.</div>
+        </div>
+        <div class="technique-item reveal reveal-delay-3">
+          <div class="technique-icon"></div>
+          <div class="technique-title">Time &amp; Skill</div>
+          <div class="technique-desc">A large tapestry may take months or even years to complete. Each piece is genuinely unique — the result of thousands of individual decisions made by the weaver.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAPESTRIES / WORKS -->
+  <section id="tapestries" style="padding:0;">
+    <div class="tapestries-header reveal">
+      <div class="section-eyebrow">The Collection</div>
+      <h2 class="section-title">Selected <em>Works</em></h2>
+      <p class="tapestries-intro">Each tapestry is an original work of art, hand-woven at the studio on a traditional upright loom. The works below represent a selection of pieces from the studio's ongoing output.</p>
+    </div>
+
+    <!-- Artwork Grid -->
+    <div class="artwork-grid-full">
+      
+      <div class="artwork-item reveal" onclick="openLightbox('koi')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><path d="M8 28 L16 20 L24 26 L32 18 L40 24" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 001</div>
+          <div class="artwork-title">Koi</div>
+          <div class="artwork-meta">Wool &amp; silk · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+      <div class="artwork-item reveal reveal-delay-1" onclick="openLightbox('sunflowers')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="1"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 002</div>
+          <div class="artwork-title">Sunflowers</div>
+          <div class="artwork-meta">Wool &amp; silk · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+      <div class="artwork-item reveal reveal-delay-2" onclick="openLightbox('abstract')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><path d="M8 8 L40 40 M40 8 L8 40" stroke="currentColor" stroke-width="1"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 003</div>
+          <div class="artwork-title">Abstract Study</div>
+          <div class="artwork-meta">Wool · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+      <div class="artwork-item reveal" onclick="openLightbox('landscape')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><path d="M8 32 Q20 16 32 28 Q38 22 40 32" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 004</div>
+          <div class="artwork-title">Landscape</div>
+          <div class="artwork-meta">Wool &amp; silk · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+      <div class="artwork-item reveal reveal-delay-1" onclick="openLightbox('portrait')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><ellipse cx="24" cy="20" rx="8" ry="10" stroke="currentColor" stroke-width="1"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 005</div>
+          <div class="artwork-title">Portrait Study</div>
+          <div class="artwork-meta">Wool · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+      <div class="artwork-item reveal reveal-delay-2" onclick="openLightbox('botanical')">
+        <div class="artwork-img-wrap">
+          <div class="artwork-img-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/><path d="M24 40 L24 16 M16 24 Q20 18 24 22 Q28 18 32 24" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            Tapestry artwork
+          </div>
+        </div>
+        <div class="artwork-info">
+          <div class="artwork-number">STS — 006</div>
+          <div class="artwork-title">Botanical</div>
+          <div class="artwork-meta">Wool &amp; silk · Hand-woven tapestry</div>
+        </div>
+      </div>
+
+    </div><!-- end artwork-grid-full -->
+  </section>
+
+  <!-- COLLECTION DESCRIPTIONS (detailed piece info) -->
+  <section id="collection">
+    <div class="section-inner">
+      <div class="section-eyebrow reveal">Works in Detail</div>
+      <h2 class="section-title reveal">Each piece,<br><em>considered</em></h2>
+
+      <div class="collection-grid">
+
+        <div class="collection-piece reveal">
+          <div class="collection-piece-number">STS — 001</div>
+          <div class="collection-piece-title">Koi</div>
+          <div class="collection-piece-body">
+            <p>An original tapestry depicting koi fish in a pond. The koi tapestry is a beautifully detailed and vibrant work, depicting a group of koi fish moving through water. The fish are shown in a variety of colours — orange, white, black and gold — and the whole composition has a strong sense of movement and life.</p>
+            <p>The water is rendered in rippling tones of blue and green, with dappled light playing across the surface. The piece is typical of Stephen's work in its combination of close observation and lively handling of colour and texture.</p>
+          </div>
+          <div class="collection-piece-meta">Wool &amp; silk · Hand-woven on upright loom</div>
+        </div>
+
+        <div class="collection-piece reveal reveal-delay-1">
+          <div class="collection-piece-number">STS — 002</div>
+          <div class="collection-piece-title">Sunflowers</div>
+          <div class="collection-piece-body">
+            <p>A tapestry depicting a vase of sunflowers. The Sunflowers tapestry is a richly coloured work, showing a large bunch of sunflowers in a vase. The flowers are full and open, with deep golden yellow petals surrounding dark centres, and the whole composition radiates warmth and energy.</p>
+            <p>The background is a warm, deep tone that allows the flowers to stand out with full force. The piece shows Stephen's characteristic ability to handle complex shapes and textures within the tapestry medium.</p>
+          </div>
+          <div class="collection-piece-meta">Wool &amp; silk · Hand-woven on upright loom</div>
+        </div>
+
+        <div class="collection-piece reveal">
+          <div class="collection-piece-number">STS — 003</div>
+          <div class="collection-piece-title">Abstract Study</div>
+          <div class="collection-piece-body">
+            <p>An abstract tapestry exploring form, colour, and the physical properties of the woven medium. Abstract works allow the weaver to focus on the intrinsic qualities of the tapestry — the way threads interlock, the texture of the surface, the subtle blending of colour that occurs when adjacent threads interact in the woven structure.</p>
+            <p>This piece demonstrates the expressive potential of tapestry as a purely abstract medium, with forms and colours that emerge from the weaving process itself.</p>
+          </div>
+          <div class="collection-piece-meta">Wool · Hand-woven on upright loom</div>
+        </div>
+
+        <div class="collection-piece reveal reveal-delay-1">
+          <div class="collection-piece-number">STS — 004</div>
+          <div class="collection-piece-title">Landscape</div>
+          <div class="collection-piece-body">
+            <p>A tapestry depicting a landscape scene. Landscape has been one of the great subjects of tapestry weaving throughout the history of the medium. In woven form, landscape takes on a particular quality — the horizontal lines of the weft giving the image a natural rhythm that suits the structure of sky, land and water.</p>
+            <p>Stephen's landscape tapestries draw on the long tradition of picturing the natural world in woven form, while bringing a contemporary sensitivity to colour and composition.</p>
+          </div>
+          <div class="collection-piece-meta">Wool &amp; silk · Hand-woven on upright loom</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- THE PROCESS -->
+  <section id="process">
+    <div class="process-inner">
+      <div class="section-eyebrow reveal">The Studio Practice</div>
+      <h2 class="section-title reveal">How a tapestry<br>is <em>made</em></h2>
+
+      <div class="process-steps">
+        <div class="process-step reveal">
+          <div class="process-step-num">01</div>
+          <div class="process-step-title">Design &amp; Cartoon</div>
+          <div class="process-step-body">The process begins with the development of a design — a cartoon — which serves as the template for the woven image. This may be an original composition or based on a provided image or brief.</div>
+        </div>
+        <div class="process-step reveal reveal-delay-1">
+          <div class="process-step-num">02</div>
+          <div class="process-step-title">Setting the Warp</div>
+          <div class="process-step-body">The loom is warped up — threads are strung vertically at a consistent tension across the width of the frame. The cartoon is placed behind the warp as a reference for the weaver.</div>
+        </div>
+        <div class="process-step reveal reveal-delay-2">
+          <div class="process-step-num">03</div>
+          <div class="process-step-title">Weaving</div>
+          <div class="process-step-body">Working from the bottom up, the weaver interlaces coloured weft threads into the warp, building up the image row by row. The weft is beaten down firmly with each pass to produce an even, smooth surface.</div>
+        </div>
+        <div class="process-step reveal reveal-delay-3">
+          <div class="process-step-num">04</div>
+          <div class="process-step-title">Finishing</div>
+          <div class="process-step-body">On completion, the tapestry is cut from the loom and the loose warp ends are secured. The finished piece is mounted for display, typically on a wooden batten or stretcher.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT STEPHEN -->
+  <section id="about">
+    <div class="about-inner">
+      <div class="about-left">
+        <div class="section-eyebrow reveal">The Artist</div>
+        <h2 class="section-title reveal">Stephen<br><em>Blackmore</em></h2>
+        <div class="about-portrait reveal reveal-delay-1">
+          <div style="text-align:center;">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.2;margin-bottom:1rem;"><circle cx="20" cy="16" r="8" stroke="#7a7672" stroke-width="1"/><path d="M4 38 C4 30 36 30 36 38" stroke="#7a7672" stroke-width="1" fill="none"/></svg>
+            <div style="font-family:var(--sans);font-weight:200;font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faint);">Portrait</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-right">
+        <div class="about-bio reveal">
+          <p>Stephen Blackmore has been weaving tapestries for many years. He trained in the traditional techniques of tapestry weaving and has developed a practice that encompasses both original works and commissioned pieces.</p>
+          <p>Stephen works on a traditional high-warp loom, using the same fundamental techniques that tapestry weavers have used for centuries. His subjects range from figurative works — portraits, still lifes, landscapes — to more abstract explorations of colour and form.</p>
+          <p>His work is characterised by close attention to colour — the way colours interact and modify one another within the woven structure — and by a sensitivity to the particular qualities of light and texture that make tapestry such a distinctive medium.</p>
+          <p>Stephen takes commissions for original tapestry works, working closely with clients to develop pieces that meet their specific requirements and work well in their intended setting. He is happy to discuss potential projects and can provide advice on scale, subject, colour palette, and other aspects of the commission process.</p>
+        </div>
+
+        <div class="about-statement reveal reveal-delay-1">
+          <div class="about-statement-label">Artist's Statement</div>
+          <div class="about-statement-text">
+            "I am drawn to tapestry because it is slow. In an age of instant images and digital reproduction, there is something valuable about a medium that demands patience and sustained attention — from the maker and from the viewer. Each tapestry is the result of many hours of careful, concentrated work, and I hope that this quality of attention is felt in the finished piece."
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMISSIONS -->
+  <section id="commissions">
+    <div class="commissions-inner">
+      <div class="section-eyebrow reveal">Bespoke Work</div>
+      <h2 class="section-title reveal">Commissions</h2>
+
+      <div class="commissions-grid">
+        <div class="commission-block reveal">
+          <h3>Working with Stephen</h3>
+          <p>Stephen welcomes commissions for original tapestry works. He is happy to work with individual clients, interior designers, architects, and organisations to develop tapestries for specific spaces and purposes.</p>
+          <p>Commissions may be based on a supplied image or design, or developed collaboratively with the client. Stephen is experienced in working from photographs, paintings, illustrations, and other reference material, as well as developing original designs from scratch.</p>
+          <a href="#contact" class="commission-cta">Begin a Conversation</a>
+        </div>
+        <div class="commission-block reveal reveal-delay-1">
+          <h3>The Commission Process</h3>
+          <p>The first step is an initial conversation — to discuss the intended setting, the subject or type of design, the required size, and any other relevant considerations. Stephen will then provide a quotation for the work, along with an indication of the likely timescale.</p>
+          <p>On agreement of terms, a deposit is required before work commences. Stephen will provide regular updates during the weaving process, and the client is welcome to visit the studio to see work in progress. The balance is payable on completion, prior to delivery or collection.</p>
+          <p>Tapestries may be shipped anywhere in the world. Stephen can advise on the best methods of packing and shipping for tapestry works.</p>
+          <a href="#contact" class="commission-cta">Enquire About a Commission</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXHIBITIONS (placeholder for any listed works/shows) -->
+  <section id="exhibitions">
+    <div class="exhibitions-inner">
+      <div class="section-eyebrow reveal">Exhibitions &amp; Shows</div>
+      <h2 class="section-title reveal">Selected <em>Exhibitions</em></h2>
+      
+      <div class="exhibition-list reveal">
+        <div class="exhibition-item">
+          <div class="exhibition-year">Ongoing</div>
+          <div class="exhibition-detail">
+            <h3>Studio Works — Available for Acquisition</h3>
+            <p>Stephen's Tapestry Studio · Original works and commission enquiries welcome</p>
+          </div>
+        </div>
+        <div class="exhibition-item">
+          <div class="exhibition-year">Commission</div>
+          <div class="exhibition-detail">
+            <h3>Bespoke Tapestries for Private Collections</h3>
+            <p>Commissions undertaken for private clients, interior designers, and organisations worldwide</p>
+          </div>
+        </div>
+        <div class="exhibition-item">
+          <div class="exhibition-year">Studio</div>
+          <div class="exhibition-detail">
+            <h3>Studio Visits by Appointment</h3>
+            <p>Prospective clients and collectors are welcome to visit the studio to view work in progress and finished pieces</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-inner">
+      <div class="contact-left">
+        <div class="section-eyebrow reveal">Get in Touch</div>
+        <h2 class="section-title reveal">Contact<br>the <em>Studio</em></h2>
+        <p class="contact-intro reveal">
+          Stephen welcomes enquiries about available works, commission possibilities, and studio visits. Please use the form opposite or contact directly using the details below.
+        </p>
+        <div class="contact-details reveal reveal-delay-1">
+          <div class="contact-detail-item">
+            <div class="contact-detail-label">Studio</div>
+            <div class="contact-detail-value">Stephen's Tapestry Studio</div>
+          </div>
+          <div class="contact-detail-item">
+            <div class="contact-detail-label">Enquiries</div>
+            <div class="contact-detail-value">
+              <a href="mailto:stephen@stephenstaperstrystudio.com">stephen@stephenstaperstrystudio.com</a>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <div class="contact-detail-label">Works &amp; Commissions</div>
+            <div class="contact-detail-value">Original artworks available for acquisition.<br>Bespoke commissions welcomed.</div>
+          </div>
+          <div class="contact-detail-item">
+            <div class="contact-detail-label">Studio Visits</div>
+            <div class="contact-detail-value">By appointment</div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-right reveal reveal-delay-2">
+        <div class="contact-form-group">
+          <label class="contact-form-label">Name</label>
+          <input type="text" class="contact-form-input" placeholder="">
+        </div>
+        <div class="contact-form-group">
+          <label class="contact-form-label">Email</label>
+          <input type="email" class="contact-form-input" placeholder="">
+        </div>
+        <div class="contact-form-group">
+          <label class="contact-form-label">Subject</label>
+          <input type="text" class="contact-form-input" placeholder="">
+        </div>
+        <div class="contact-form-group">
+          <label class="contact-form-label">Message</label>
+          <textarea class="contact-form-textarea" placeholder=""></textarea>
+        </div>
+        <button class="contact-submit">Send Enquiry</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">Stephen's Tapestry Studio</div>
+      <nav>
+        <ul class="footer-nav">
+          <li><a href="#what-is">About Tapestry</a></li>
+          <li><a href="#tapestries">Works</a></li>
+          <li><a href="#about">Stephen</a></li>
+          <li><a href="#commissions">Commissions</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="footer-copy">© Stephen's Tapestry Studio. All rights reserved.</div>
+    </div>
+  </footer>
+
+</div><!-- end #main-site -->
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">
+    <span>✕</span>
+    <span>Close</span>
+  </button>
+  <div class="lightbox-content">
+    <div class="lightbox-img" id="lightbox-img">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="32" height="32" stroke="currentColor" stroke-width="1"/></svg>
+    </div>
+    <div class="lightbox-info" id="lightbox-info">
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// PASSWORD GATE
+// =====================================================
+const CORRECT_PASSWORD = '8073';
+const gateInput = document.getElementById('gate-input');
+const gateBtn = document.getElementById('gate-btn');
+const gateError = document.getElementById('gate-error');
+const gate = document.getElementById('password-gate');
+const mainSite = document.getElementById('main-site');
+
+function attemptEntry() {
+  const val = gateInput.value.trim();
+  if (val === CORRECT_PASSWORD) {
+    gateError.classList.remove('visible');
+    gate.classList.add('fade-out');
+    setTimeout(() => {
+      gate.style.display = 'none';
+      mainSite.classList.add('revealed');
+    }, 1500);
+  } else {
+    gateError.classList.add('visible');
+    gateInput.value = '';
+    gateInput.style.animation = 'none';
+    requestAnimationFrame(() => {
+      gateInput.style.animation = 'shake 0.4s ease';
+    });
+    setTimeout(() => gateError.classList.remove('visible'), 3000);
+  }
+}
+
+const shakeStyle = document.createElement('style');
+shakeStyle.textContent = `
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}`;
+document.head.appendChild(shakeStyle);
+
+gateBtn.addEventListener('click', attemptEntry);
+gateInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') attemptEntry();
+});
+
+// =====================================================
+// NAV SCROLL
+// =====================================================
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 60) {
+    nav.classList.add('scrolled');
+  } else {
+    nav.classList.remove('scrolled');
+  }
+}, { passive: true });
+
+// =====================================================
+// MOBILE NAV
+// =====================================================
+const hamburger = document.getElementById('nav-hamburger');
+const drawer = document.getElementById('nav-drawer');
+const drawerClose = document.getElementById('nav-drawer-close');
+const navOverlay = document.getElementById('nav-overlay');
+
+function openDrawer() {
+  drawer.classList.add('open');
+  navOverlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+  drawer.classList.remove('open');
+  navOverlay.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+hamburger.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+navOverlay.addEventListener('click', closeDrawer);
+
+drawer.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', closeDrawer);
+});
+
+// =====================================================
+// SCROLL REVEAL
+// =====================================================
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+reveals.forEach(el => observer.observe(el));
+
+// =====================================================
+// LIGHTBOX
+// =====================================================
+const artworkData = {
+  koi: {
+    number: 'STS — 001',
+    title: 'Koi',
+    meta: 'Wool & silk · Hand-woven tapestry',
+    desc: 'An original tapestry depicting koi fish in a pond. The koi tapestry is a beautifully detailed and vibrant work, depicting a group of koi fish moving through water. The fish are shown in a variety of colours — orange, white, black and gold — and the whole composition has a strong sense of movement and life. The water is rendered in rippling tones of blue and green, with dappled light playing across the surface.'
+  },
+  sunflowers: {
+    number: 'STS — 002',
+    title: 'Sunflowers',
+    meta: 'Wool & silk · Hand-woven tapestry',
+    desc: 'A tapestry depicting a vase of sunflowers. The Sunflowers tapestry is a richly coloured work, showing a large bunch of sunflowers in a vase. The flowers are full and open, with deep golden yellow petals surrounding dark centres, and the whole composition radiates warmth and energy. The background is a warm, deep tone that allows the flowers to stand out with full force.'
+  },
+  abstract: {
+    number: 'STS — 003',
+    title: 'Abstract Study',
+    meta: 'Wool · Hand-woven tapestry',
+    desc: 'An abstract tapestry exploring form, colour, and the physical properties of the woven medium. Abstract works allow the weaver to focus on the intrinsic qualities of the tapestry — the way threads interlock, the texture of the surface, the subtle blending of colour that occurs when adjacent threads interact in the woven structure.'
+  },
+  landscape: {
+    number: 'STS — 004',
+    title: 'Landscape',
+    meta: 'Wool & silk · Hand-woven tapestry',
+    desc: 'A tapestry depicting a landscape scene. Landscape has been one of the great subjects of tapestry weaving throughout the history of the medium. In woven form, landscape takes on a particular quality — the horizontal lines of the weft giving the image a natural rhythm that suits the structure of sky, land and water.'
+  },
+  portrait: {
+    number: 'STS — 005',
+    title: 'Portrait Study',
+    meta: 'Wool · Hand-woven tapestry',
+    desc: 'A portrait study realised in tapestry. The portrait is one of the most demanding subjects for the tapestry weaver — requiring close observation and a sensitive handling of tone and colour to capture likeness and expression within the constraints of the woven medium.'
+  },
+  botanical: {
+    number: 'STS — 006',
+    title: 'Botanical',
+    meta: 'Wool & silk · Hand-woven tapestry',
+    desc: 'A botanical tapestry celebrating the forms of plant life. Botanical subjects offer the tapestry weaver rich opportunities to explore the textures and colours of the natural world — the variety of greens, the complex forms of leaves and stems, the delicate intricacy of flowers and seed-heads.'
+  }
+};
+
+const lightbox = document.getElementById('lightbox');
+
+function openLightbox(id) {
+  const d = artworkData[id];
+  if (!d) return;
+  document.getElementById('lightbox-info').innerHTML = `
+    <div class="artwork-number">${d.number}</div>
+    <div class="artwork-title">${d.title}</div>
+    <div class="artwork-meta" style="font-family:var(--sans);font-weight:300;font-size:0.72rem;color:rgba(196,168,130,0.5);letter-spacing:0.05em;">${d.meta}</div>
+    <div class="artwork-desc">${d.desc}</div>
+  `;
+  lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+lightbox.addEventListener('click', e => {
+  if (e.target === lightbox) closeLightbox();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// =====================================================
+// MARQUEE — duplicate for seamless loop
+// =====================================================
+(function() {
+  const track = document.getElementById('marquee-track');
+  if (track) {
+    const clone = track.cloneNode(true);
+    clone.setAttribute('aria-hidden', 'true');
+    track.parentNode.appendChild(clone);
+  }
+})();
+
+// =====================================================
+// SMOOTH NAV LINKS
+// =====================================================
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
